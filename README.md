@@ -1,4 +1,4 @@
-# redmi-watch5-calculator
+# Redmi Watch5 Calculator
 一个面向 Redmi Watch 5（2.07 英寸 AMOLED 方屏）的小米 Vela JS 应用，覆盖基础/科学计算、单位换算、一元二次方程求解三大场景
 
 
