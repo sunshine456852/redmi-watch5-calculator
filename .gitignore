@@ -1,0 +1,15 @@
+# 依赖包（体积太大，不需要传）
+node_modules/
+
+# 编译产物（.rpk 和中间文件）
+dist/
+build/
+
+# 签名私钥（绝对机密，切勿上传！）
+sign/
+
+# 编辑器和系统产生的临时文件
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

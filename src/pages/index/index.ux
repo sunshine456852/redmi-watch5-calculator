@@ -1,0 +1,950 @@
+<template>
+  <div class="page">
+
+    <!-- ============ 顶部胶囊快捷栏 ============ -->
+    <div class="capsule-bar">
+      <div class="tab {{mode === 'calc' ? 'tab-on' : ''}}" @click="setMode('calc')">
+        <text class="{{mode === 'calc' ? 'tab-label-on' : 'tab-label'}}">计算器</text>
+      </div>
+      <div class="tab {{mode === 'convert' ? 'tab-on' : ''}}" @click="setMode('convert')">
+        <text class="{{mode === 'convert' ? 'tab-label-on' : 'tab-label'}}">单位换算</text>
+      </div>
+      <div class="tab {{mode === 'solve' ? 'tab-on' : ''}}" @click="setMode('solve')">
+        <text class="{{mode === 'solve' ? 'tab-label-on' : 'tab-label'}}">方程求解</text>
+      </div>
+    </div>
+
+    <!-- ============ 计算器模式 ============ -->
+    <div class="calc-mode" if="{{mode === 'calc'}}">
+      <!-- 显示区 -->
+      <div class="display">
+        <div class="display-top">
+          <div class="deg-toggle {{angleMode === 'DEG' ? 'deg-on' : ''}}" @click="toggleAngle">
+            <text class="{{angleMode === 'DEG' ? 'deg-label-on' : 'deg-label'}}">{{angleMode}}</text>
+          </div>
+          <text class="page-hint">{{kbPage === 0 ? '基础' : '函数'}}</text>
+        </div>
+        <div class="expr-wrap">
+          <scroll class="expr-scroll" scroll-x="true">
+            <text class="expr-text">{{exprView}}</text>
+          </scroll>
+        </div>
+        <text class="result-text {{error ? 'result-err' : ''}}">{{error ? error : (result ? result : '0')}}</text>
+      </div>
+
+      <!-- 键盘区：水平 Swiper 两页 -->
+      <swiper class="keyboard" index="{{kbPage}}" indicator="false" loop="false" @change="onKbChange">
+        <!-- 第 1 页：基础键 -->
+        <div class="kb-page">
+          <div class="kb-row">
+            <div class="key k-ac" @click="press('AC')"><text class="key-text">AC</text></div>
+            <div class="key k-ac" @click="press('Del')"><text class="key-text">Del</text></div>
+            <div class="key k-num" @click="press('(')"><text class="key-text">(</text></div>
+            <div class="key k-num" @click="press(')')"><text class="key-text">)</text></div>
+          </div>
+          <div class="kb-row">
+            <div class="key k-num" @click="press('7')"><text class="key-text">7</text></div>
+            <div class="key k-num" @click="press('8')"><text class="key-text">8</text></div>
+            <div class="key k-num" @click="press('9')"><text class="key-text">9</text></div>
+            <div class="key k-op" @click="press('÷')"><text class="key-text">÷</text></div>
+          </div>
+          <div class="kb-row">
+            <div class="key k-num" @click="press('4')"><text class="key-text">4</text></div>
+            <div class="key k-num" @click="press('5')"><text class="key-text">5</text></div>
+            <div class="key k-num" @click="press('6')"><text class="key-text">6</text></div>
+            <div class="key k-op" @click="press('×')"><text class="key-text">×</text></div>
+          </div>
+          <div class="kb-row">
+            <div class="key k-num" @click="press('1')"><text class="key-text">1</text></div>
+            <div class="key k-num" @click="press('2')"><text class="key-text">2</text></div>
+            <div class="key k-num" @click="press('3')"><text class="key-text">3</text></div>
+            <div class="key k-op" @click="press('-')"><text class="key-text">-</text></div>
+          </div>
+          <div class="kb-row">
+            <div class="key k-num" @click="press('0')"><text class="key-text">0</text></div>
+            <div class="key k-num" @click="press('.')"><text class="key-text">.</text></div>
+            <div class="key k-num" @click="press('%')"><text class="key-text">%</text></div>
+            <div class="key k-op" @click="press('+')"><text class="key-text">+</text></div>
+          </div>
+          <div class="kb-row">
+            <div class="key k-sw" @click="press('fn')"><text class="key-text">函数</text></div>
+            <div class="key k-eq key-wide" @click="press('=')"><text class="key-text">=</text></div>
+          </div>
+        </div>
+
+        <!-- 第 2 页：科学函数 -->
+        <div class="kb-page">
+          <div class="kb-row">
+            <div class="key k-ac" @click="press('AC')"><text class="key-text">AC</text></div>
+            <div class="key k-ac" @click="press('Del')"><text class="key-text">Del</text></div>
+            <div class="key k-sci" @click="press('x^y')"><text class="key-text">x^y</text></div>
+            <div class="key k-sci" @click="press('√')"><text class="key-text">√</text></div>
+          </div>
+          <div class="kb-row">
+            <div class="key k-sci" @click="press('sin')"><text class="key-text">sin</text></div>
+            <div class="key k-sci" @click="press('cos')"><text class="key-text">cos</text></div>
+            <div class="key k-sci" @click="press('tan')"><text class="key-text">tan</text></div>
+            <div class="key k-num" @click="press('π')"><text class="key-text">π</text></div>
+          </div>
+          <div class="kb-row">
+            <div class="key k-sci" @click="press('asin')"><text class="key-text">asin</text></div>
+            <div class="key k-sci" @click="press('acos')"><text class="key-text">acos</text></div>
+            <div class="key k-sci" @click="press('atan')"><text class="key-text">atan</text></div>
+            <div class="key k-num" @click="press('e')"><text class="key-text">e</text></div>
+          </div>
+          <div class="kb-row">
+            <div class="key k-sci" @click="press('ln')"><text class="key-text">ln</text></div>
+            <div class="key k-sci" @click="press('log')"><text class="key-text">log</text></div>
+            <div class="key k-sci" @click="press('x²')"><text class="key-text">x²</text></div>
+            <div class="key k-sci" @click="press('x³')"><text class="key-text">x³</text></div>
+          </div>
+          <div class="kb-row">
+            <div class="key k-sci" @click="press('e^x')"><text class="key-text">e^x</text></div>
+            <div class="key k-sci" @click="press('10^x')"><text class="key-text">10^x</text></div>
+            <div class="key k-sci" @click="press('n!')"><text class="key-text">n!</text></div>
+            <div class="key k-sci" @click="press('A')"><text class="key-text">A</text></div>
+          </div>
+          <div class="kb-row">
+            <div class="key k-sci" @click="press('C')"><text class="key-text">C</text></div>
+            <div class="key k-sci" @click="press(',')"><text class="key-text">,</text></div>
+            <div class="key k-sw" @click="press('123')"><text class="key-text">123</text></div>
+            <div class="key k-eq" @click="press('=')"><text class="key-text">=</text></div>
+          </div>
+        </div>
+      </swiper>
+    </div>
+
+    <!-- ============ 单位换算模式 ============ -->
+    <div class="convert-mode" if="{{mode === 'convert'}}">
+      <div class="conv-body">
+        <scroll class="cat-scroll" scroll-x="true">
+          <div class="cat-chip {{convCat === $idx ? 'cat-on' : ''}}" for="{{cats}}" @click="setCat($idx)">
+            <text class="{{convCat === $idx ? 'cat-label-on' : 'cat-label'}}">{{$item.name}}</text>
+          </div>
+        </scroll>
+
+        <div class="conv-row" @click="focusConv('from')">
+          <text class="conv-label">从</text>
+          <text class="conv-value {{convFocus === 'from' ? 'conv-active' : ''}}">{{convFromVal ? convFromVal : '0'}}</text>
+          <div class="conv-unit" @click="cycleFrom"><text class="unit-label">{{convFromName}}</text></div>
+        </div>
+
+        <div class="conv-row" @click="focusConv('to')">
+          <text class="conv-label">到</text>
+          <text class="conv-value {{convFocus === 'to' ? 'conv-active' : ''}}">{{convToVal ? convToVal : '0'}}</text>
+          <div class="conv-unit" @click="cycleTo"><text class="unit-label">{{convToName}}</text></div>
+        </div>
+
+        <div class="conc-extra" if="{{isConc}}">
+          <div class="conc-field" @click="focusConv('rho')">
+            <text class="conv-label">ρ</text>
+            <text class="conc-value {{convFocus === 'rho' ? 'conv-active' : ''}}">{{concRho ? concRho : 'g/mL'}}</text>
+          </div>
+          <div class="conc-field" @click="focusConv('m')">
+            <text class="conv-label">M</text>
+            <text class="conc-value {{convFocus === 'm' ? 'conv-active' : ''}}">{{concM ? concM : 'g/mol'}}</text>
+          </div>
+        </div>
+      </div>
+
+      <div class="numpad">
+        <div class="kb-row">
+          <div class="key k-num" @click="numKey('7')"><text class="key-text">7</text></div>
+          <div class="key k-num" @click="numKey('8')"><text class="key-text">8</text></div>
+          <div class="key k-num" @click="numKey('9')"><text class="key-text">9</text></div>
+          <div class="key k-ac" @click="numKey('C')"><text class="key-text">C</text></div>
+        </div>
+        <div class="kb-row">
+          <div class="key k-num" @click="numKey('4')"><text class="key-text">4</text></div>
+          <div class="key k-num" @click="numKey('5')"><text class="key-text">5</text></div>
+          <div class="key k-num" @click="numKey('6')"><text class="key-text">6</text></div>
+          <div class="key k-ac" @click="numKey('Del')"><text class="key-text">⌫</text></div>
+        </div>
+        <div class="kb-row">
+          <div class="key k-num" @click="numKey('1')"><text class="key-text">1</text></div>
+          <div class="key k-num" @click="numKey('2')"><text class="key-text">2</text></div>
+          <div class="key k-num" @click="numKey('3')"><text class="key-text">3</text></div>
+          <div class="key k-op" @click="numKey('±')"><text class="key-text">±</text></div>
+        </div>
+        <div class="kb-row">
+          <div class="key k-num key-wide3" @click="numKey('0')"><text class="key-text">0</text></div>
+          <div class="key k-num" @click="numKey('.')"><text class="key-text">.</text></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 方程求解模式 ============ -->
+    <div class="solve-mode" if="{{mode === 'solve'}}">
+      <div class="solve-body">
+        <text class="eq-title">ax² + bx + c = 0</text>
+
+        <div class="eq-row" @click="setEq('a')">
+          <text class="eq-label">a =</text>
+          <text class="eq-value {{eqActive === 'a' ? 'conv-active' : ''}}">{{eqA ? eqA : '?'}}</text>
+        </div>
+        <div class="eq-row" @click="setEq('b')">
+          <text class="eq-label">b =</text>
+          <text class="eq-value {{eqActive === 'b' ? 'conv-active' : ''}}">{{eqB ? eqB : '?'}}</text>
+        </div>
+        <div class="eq-row" @click="setEq('c')">
+          <text class="eq-label">c =</text>
+          <text class="eq-value {{eqActive === 'c' ? 'conv-active' : ''}}">{{eqC ? eqC : '?'}}</text>
+        </div>
+
+        <div class="solve-btn" @click="solveEq"><text class="solve-label">求 解</text></div>
+
+        <div class="eq-result">
+          <text class="eq-delta" if="{{eqDelta !== ''}}">Δ = {{eqDelta}}</text>
+          <text class="eq-root" if="{{eqRootCount === 2}}">x₁ = {{eqX1}}  x₂ = {{eqX2}}</text>
+          <text class="eq-root" if="{{eqRootCount === 1}}">x = {{eqX1}}</text>
+          <text class="eq-root result-err" if="{{eqMsg !== ''}}">{{eqMsg}}</text>
+        </div>
+      </div>
+
+      <div class="numpad">
+        <div class="kb-row">
+          <div class="key k-num" @click="numKey('7')"><text class="key-text">7</text></div>
+          <div class="key k-num" @click="numKey('8')"><text class="key-text">8</text></div>
+          <div class="key k-num" @click="numKey('9')"><text class="key-text">9</text></div>
+          <div class="key k-ac" @click="numKey('C')"><text class="key-text">C</text></div>
+        </div>
+        <div class="kb-row">
+          <div class="key k-num" @click="numKey('4')"><text class="key-text">4</text></div>
+          <div class="key k-num" @click="numKey('5')"><text class="key-text">5</text></div>
+          <div class="key k-num" @click="numKey('6')"><text class="key-text">6</text></div>
+          <div class="key k-ac" @click="numKey('Del')"><text class="key-text">⌫</text></div>
+        </div>
+        <div class="kb-row">
+          <div class="key k-num" @click="numKey('1')"><text class="key-text">1</text></div>
+          <div class="key k-num" @click="numKey('2')"><text class="key-text">2</text></div>
+          <div class="key k-num" @click="numKey('3')"><text class="key-text">3</text></div>
+          <div class="key k-op" @click="numKey('±')"><text class="key-text">±</text></div>
+        </div>
+        <div class="kb-row">
+          <div class="key k-num key-wide3" @click="numKey('0')"><text class="key-text">0</text></div>
+          <div class="key k-num" @click="numKey('.')"><text class="key-text">.</text></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</template>
+
+<style>
+  .page {
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    background-color: #0A0A0C;
+  }
+
+  /* ---------- 顶部胶囊栏 ---------- */
+  .capsule-bar {
+    width: 100%;
+    height: 92px;
+    padding: 12px 14px;
+    flex-direction: row;
+    align-items: center;
+  }
+  .tab {
+    flex: 1;
+    height: 60px;
+    margin: 0 4px;
+    border-radius: 999px;
+    background-color: #1C1C20;
+    border: 1px solid #2A2A2E;
+    align-items: center;
+    justify-content: center;
+  }
+  .tab-on {
+    background-color: #FF9F0A;
+    border: 1px solid #FFC46B;
+    box-shadow: 0 4px 12px #FF9F0A;
+  }
+  .tab-label {
+    font-size: 26px;
+    color: #8E8E93;
+  }
+  .tab-label-on {
+    font-size: 26px;
+    color: #FFFFFF;
+    font-weight: bold;
+  }
+
+  /* ---------- 计算器：显示区 ---------- */
+  .calc-mode {
+    flex: 1;
+    flex-direction: column;
+  }
+  .display {
+    width: 100%;
+    height: 34%;
+    flex-direction: column;
+    padding: 0 20px;
+  }
+  .display-top {
+    width: 100%;
+    height: 56px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .deg-toggle {
+    height: 44px;
+    padding: 0 22px;
+    border-radius: 999px;
+    background-color: #1C1C20;
+    border: 1px solid #2A2A2E;
+    align-items: center;
+    justify-content: center;
+  }
+  .deg-on {
+    background-color: #0A84FF;
+    border: 1px solid #6CB7FF;
+  }
+  .deg-label {
+    font-size: 24px;
+    color: #8E8E93;
+  }
+  .deg-label-on {
+    font-size: 24px;
+    color: #FFFFFF;
+  }
+  .page-hint {
+    font-size: 24px;
+    color: #5A5A60;
+  }
+  .expr-wrap {
+    width: 100%;
+    height: 48px;
+    flex-direction: row;
+    align-items: center;
+  }
+  .expr-scroll {
+    width: 100%;
+    height: 48px;
+  }
+  .expr-text {
+    font-size: 28px;
+    color: #9E9EA7;
+    lines: 1;
+  }
+  .result-text {
+    width: 100%;
+    font-size: 54px;
+    color: #F2F2F7;
+    text-align: right;
+    margin-top: 6px;
+    lines: 1;
+    text-overflow: ellipsis;
+  }
+  .result-err {
+    color: #FF453A;
+  }
+
+  /* ---------- 键盘 ---------- */
+  .keyboard {
+    width: 100%;
+    height: 66%;
+  }
+  .kb-page {
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    padding: 2px 12px 10px 12px;
+  }
+  .kb-row {
+    flex: 1;
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  /* ---------- 粘土按键 ---------- */
+  .key {
+    flex: 1;
+    margin: 4px;
+    border-radius: 20px;
+    border: 1px solid #3A3A40;
+    box-shadow: 0 4px 10px #000000;
+    align-items: center;
+    justify-content: center;
+  }
+  .key-wide {
+    flex: 3;
+  }
+  .key-wide3 {
+    flex: 3;
+  }
+  .key-text {
+    font-size: 26px;
+    color: #F2F2F7;
+  }
+  .k-num {
+    background-color: #1E1E22;
+  }
+  .k-op {
+    background-color: #FF9F0A;
+  }
+  .k-sci {
+    background-color: #0A84FF;
+  }
+  .k-ac {
+    background-color: #FF453A;
+  }
+  .k-eq {
+    background-color: #FF9F0A;
+  }
+  .k-sw {
+    background-color: #2A2A2E;
+  }
+
+  /* ---------- 单位换算 ---------- */
+  .convert-mode {
+    flex: 1;
+    flex-direction: column;
+  }
+  .conv-body {
+    flex: 1;
+    flex-direction: column;
+    padding: 8px 16px 4px 16px;
+  }
+  .cat-scroll {
+    width: 100%;
+    height: 60px;
+    margin-bottom: 8px;
+  }
+  .cat-chip {
+    height: 48px;
+    padding: 0 26px;
+    margin-right: 10px;
+    border-radius: 999px;
+    background-color: #1C1C20;
+    border: 1px solid #2A2A2E;
+    align-items: center;
+    justify-content: center;
+  }
+  .cat-on {
+    background-color: #0A84FF;
+    border: 1px solid #6CB7FF;
+  }
+  .cat-label {
+    font-size: 24px;
+    color: #8E8E93;
+  }
+  .cat-label-on {
+    font-size: 24px;
+    color: #FFFFFF;
+  }
+  .conv-row {
+    width: 100%;
+    height: 96px;
+    margin: 6px 0;
+    flex-direction: row;
+    align-items: center;
+    background-color: #141416;
+    border-radius: 20px;
+    border: 1px solid #2A2A2E;
+    padding: 0 16px;
+  }
+  .conv-label {
+    width: 56px;
+    font-size: 26px;
+    color: #5A5A60;
+  }
+  .conv-value {
+    flex: 1;
+    font-size: 40px;
+    color: #F2F2F7;
+    text-align: right;
+    margin-right: 12px;
+    lines: 1;
+  }
+  .conv-active {
+    color: #FF9F0A;
+  }
+  .conv-unit {
+    height: 56px;
+    padding: 0 20px;
+    border-radius: 999px;
+    background-color: #2A2A2E;
+    border: 1px solid #3A3A40;
+    align-items: center;
+    justify-content: center;
+  }
+  .unit-label {
+    font-size: 24px;
+    color: #D0D0D5;
+  }
+  .conc-extra {
+    flex-direction: row;
+    width: 100%;
+  }
+  .conc-field {
+    flex: 1;
+    height: 76px;
+    margin: 4px 6px;
+    flex-direction: row;
+    align-items: center;
+    background-color: #141416;
+    border-radius: 18px;
+    border: 1px solid #2A2A2E;
+    padding: 0 14px;
+  }
+  .conc-value {
+    flex: 1;
+    font-size: 32px;
+    color: #F2F2F7;
+    text-align: right;
+    lines: 1;
+  }
+
+  /* ---------- 方程求解 ---------- */
+  .solve-mode {
+    flex: 1;
+    flex-direction: column;
+  }
+  .solve-body {
+    flex: 1;
+    flex-direction: column;
+    padding: 8px 20px 4px 20px;
+  }
+  .eq-title {
+    font-size: 26px;
+    color: #9E9EA7;
+    text-align: center;
+    margin: 6px 0 10px 0;
+  }
+  .eq-row {
+    width: 100%;
+    height: 84px;
+    margin: 5px 0;
+    flex-direction: row;
+    align-items: center;
+    background-color: #141416;
+    border-radius: 20px;
+    border: 1px solid #2A2A2E;
+    padding: 0 20px;
+  }
+  .eq-label {
+    width: 76px;
+    font-size: 30px;
+    color: #5A5A60;
+  }
+  .eq-value {
+    flex: 1;
+    font-size: 40px;
+    color: #F2F2F7;
+    text-align: right;
+    lines: 1;
+  }
+  .solve-btn {
+    width: 100%;
+    height: 76px;
+    margin: 10px 0 6px 0;
+    border-radius: 999px;
+    background-color: #FF9F0A;
+    border: 1px solid #FFC46B;
+    box-shadow: 0 4px 12px #FF9F0A;
+    align-items: center;
+    justify-content: center;
+  }
+  .solve-label {
+    font-size: 30px;
+    color: #FFFFFF;
+    font-weight: bold;
+  }
+  .eq-result {
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 6px;
+  }
+  .eq-delta {
+    font-size: 28px;
+    color: #9E9EA7;
+    margin: 2px 0;
+  }
+  .eq-root {
+    font-size: 28px;
+    color: #30D158;
+    margin: 2px 0;
+  }
+
+  /* ---------- 数字键盘（单位换算/方程求解共用） ---------- */
+  .numpad {
+    width: 100%;
+    height: 236px;
+    flex-direction: column;
+    padding: 4px 12px 8px 12px;
+  }
+</style>
+
+<script>
+  const calc = require('../../common/calc.js')
+
+  // ---------- 顶层工具函数 ----------
+  const OPSET = ['+', '-', '×', '÷', '^']
+  const isOp = c => OPSET.indexOf(c) >= 0
+  const isDigit = c => (c >= '0' && c <= '9')
+
+  const FUNC_TOKENS = {
+    'sin': 'sin(', 'cos': 'cos(', 'tan': 'tan(',
+    'asin': 'asin(', 'acos': 'acos(', 'atan': 'atan(',
+    'ln': 'ln(', 'log': 'log(', '√': '√(', 'A': 'A(', 'C': 'C('
+  }
+  const isFuncKey = k => !!FUNC_TOKENS[k]
+  const FUNC_NAMES = ['asin', 'acos', 'atan', 'sin', 'cos', 'tan', 'ln', 'log']
+
+  // 求值后：按下“开始新算式”的键则清空
+  function isStartNew(key) {
+    return isDigit(key) || key === '.' || key === 'π' || key === 'e' || isFuncKey(key) || key === '('
+  }
+
+  function openCount(s) { let n = 0; for (const c of s) if (c === '(') n++; return n }
+  function closeCount(s) { let n = 0; for (const c of s) if (c === ')') n++; return n }
+
+  // 退格：整体删除函数名
+  function deleteLast(s) {
+    if (!s) return ''
+    for (const f of FUNC_NAMES) {
+      if (s.endsWith(f)) return s.slice(0, -f.length)
+    }
+    return s.slice(0, -1)
+  }
+
+  export default {
+    private: {
+      mode: 'calc',            // calc | convert | solve
+      angleMode: 'DEG',
+      expr: '',
+      exprView: '',
+      result: '',
+      error: '',
+      justEvaluated: false,
+      answer: null,
+      kbPage: 0,
+
+      // 单位换算
+      cats: calc.UNIT_CATEGORIES,
+      convCat: 0,
+      convFrom: 0,
+      convTo: 1,
+      convFromVal: '',
+      convToVal: '',
+      convFromName: '米(m)',
+      convToName: '千米(km)',
+      convFocus: 'from',
+      isConc: false,
+      concRho: '',
+      concM: '',
+
+      // 方程求解
+      eqActive: 'a',
+      eqA: '', eqB: '', eqC: '',
+      eqDelta: '',
+      eqRootCount: 0,
+      eqX1: '', eqX2: '', eqMsg: ''
+    },
+
+    onInit() {
+      this.refreshConv()
+    },
+
+    // ---------- 模式 ----------
+    setMode(m) {
+      this.mode = m
+      if (m === 'convert') this.refreshConv()
+      if (m === 'solve') this.eqActive = 'a'
+    },
+
+    // ---------- 计算器 ----------
+    toggleAngle() {
+      this.angleMode = this.angleMode === 'DEG' ? 'RAD' : 'DEG'
+      this.refreshPreview()
+    },
+    onKbChange(e) {
+      this.kbPage = e.index
+    },
+    setExpr(s) {
+      this.expr = s
+      this.exprView = calc.pretty(s)
+    },
+    refreshPreview() {
+      this.error = ''
+      if (!this.expr || !this.expr.trim()) { this.result = ''; return }
+      try {
+        const v = calc.evaluate(this.expr, this.angleMode)
+        this.result = calc.formatNumber(v)
+      } catch (err) {
+        this.result = ''
+      }
+    },
+    press(key) {
+      this.error = ''
+      if (key === 'AC') {
+        this.setExpr(''); this.result = ''; this.justEvaluated = false; this.answer = null
+        return
+      }
+      if (key === 'Del') {
+        this.justEvaluated = false
+        this.setExpr(deleteLast(this.expr))
+        this.refreshPreview()
+        return
+      }
+      if (key === '=') { this.evaluateExpr(); return }
+      if (key === 'fn') { this.kbPage = 1; return }
+      if (key === '123') { this.kbPage = 0; return }
+      this.append(key)
+    },
+    append(key) {
+      if (this.justEvaluated) {
+        if (isStartNew(key)) {
+          this.setExpr(''); this.result = ''; this.answer = null
+        } else {
+          this.setExpr(calc.numToStr(this.answer)); this.result = ''
+        }
+        this.justEvaluated = false
+      }
+      const e = this.expr
+      const last = e.slice(-1)
+
+      // 数字 / 小数点
+      if (isDigit(key) || key === '.') {
+        if (key === '.' && last === '.') { this.refreshPreview(); return }
+        if (last === 'π' || last === 'e' || last === ')' || last === '!') {
+          this.setExpr(e + '×' + key)
+        } else {
+          this.setExpr(e + key)
+        }
+        this.refreshPreview(); return
+      }
+      // 运算符
+      if (isOp(key)) {
+        if (e === '') {
+          if (key === '-') this.setExpr('-')
+          this.refreshPreview(); return
+        }
+        if (isOp(last)) {
+          if (key === '-' && last === '^') this.setExpr(e + key)
+          else this.setExpr(e.slice(0, -1) + key)
+          this.refreshPreview(); return
+        }
+        if (last === '(') {
+          if (key === '-') this.setExpr(e + key)
+          this.refreshPreview(); return
+        }
+        this.setExpr(e + key); this.refreshPreview(); return
+      }
+      // 左括号
+      if (key === '(') {
+        if (isDigit(last) || last === ')' || last === 'π' || last === 'e' || last === '!') {
+          this.setExpr(e + '×(')
+        } else {
+          this.setExpr(e + '(')
+        }
+        this.refreshPreview(); return
+      }
+      // 右括号
+      if (key === ')') {
+        if (openCount(e) <= closeCount(e) || isOp(last) || last === '(') { this.refreshPreview(); return }
+        this.setExpr(e + ')'); this.refreshPreview(); return
+      }
+      // 逗号（排列 A / 组合 C 的参数分隔）
+      if (key === ',') {
+        if (isDigit(last) || last === ')' || last === 'π' || last === 'e') {
+          this.setExpr(e + ',')
+        }
+        this.refreshPreview(); return
+      }
+      // 常量 π / e
+      if (key === 'π' || key === 'e') {
+        if (isDigit(last) || last === ')' || last === 'π' || last === 'e' || last === '!') {
+          this.setExpr(e + '×' + key)
+        } else {
+          this.setExpr(e + key)
+        }
+        this.refreshPreview(); return
+      }
+      // 函数
+      if (isFuncKey(key)) {
+        const t = FUNC_TOKENS[key]
+        if (isDigit(last) || last === ')' || last === 'π' || last === 'e' || last === '!') {
+          this.setExpr(e + '×' + t)
+        } else {
+          this.setExpr(e + t)
+        }
+        this.refreshPreview(); return
+      }
+      // 幂运算简写
+      if (key === 'x^y') {
+        if (e === '' || isOp(last) || last === '(') { this.refreshPreview(); return }
+        this.setExpr(e + '^'); this.refreshPreview(); return
+      }
+      if (key === 'x²' || key === 'x³') {
+        if (e === '' || isOp(last) || last === '(') { this.refreshPreview(); return }
+        this.setExpr(e + (key === 'x²' ? '^2' : '^3')); this.refreshPreview(); return
+      }
+      if (key === 'e^x' || key === '10^x') {
+        const t = key === 'e^x' ? 'e^' : '10^'
+        if (isDigit(last) || last === ')' || last === 'π' || last === 'e' || last === '!') {
+          this.setExpr(e + '×' + t)
+        } else {
+          this.setExpr(e + t)
+        }
+        this.refreshPreview(); return
+      }
+      // 阶乘
+      if (key === 'n!') {
+        if ((isDigit(last) || last === ')' || last === 'π' || last === 'e') && last !== '!') {
+          this.setExpr(e + '!')
+        }
+        this.refreshPreview(); return
+      }
+      // 百分比
+      if (key === '%') {
+        if (isDigit(last) || last === ')' || last === 'π' || last === 'e') {
+          this.setExpr(e + '%')
+        }
+        this.refreshPreview(); return
+      }
+    },
+    evaluateExpr() {
+      if (!this.expr || !this.expr.trim()) return
+      try {
+        const v = calc.evaluate(this.expr, this.angleMode)
+        this.answer = v
+        this.result = calc.formatNumber(v)
+        this.justEvaluated = true
+        this.error = ''
+      } catch (err) {
+        this.result = ''
+        this.error = (err && err.message) || '表达式错误'
+        this.justEvaluated = false
+      }
+    },
+
+    // ---------- 单位换算 ----------
+    setCat(idx) {
+      this.convCat = idx
+      const cat = this.cats[idx]
+      this.convFrom = 0
+      this.convTo = Math.min(1, cat.units.length - 1)
+      this.convFromVal = ''
+      this.convToVal = ''
+      this.convFocus = 'from'
+      this.isConc = (cat.type === 'concentration')
+      this.concRho = ''
+      this.concM = ''
+      this.refreshConv()
+    },
+    cycleFrom() {
+      const cat = this.cats[this.convCat]
+      this.convFrom = (this.convFrom + 1) % cat.units.length
+      this.refreshConv()
+    },
+    cycleTo() {
+      const cat = this.cats[this.convCat]
+      this.convTo = (this.convTo + 1) % cat.units.length
+      this.refreshConv()
+    },
+    focusConv(t) {
+      this.convFocus = t
+      if (t === 'from' || t === 'to') {
+        this.convFromVal = ''
+        this.convToVal = ''
+      }
+    },
+    refreshConv() {
+      const cat = this.cats[this.convCat]
+      this.convFromName = cat.units[this.convFrom].name
+      this.convToName = cat.units[this.convTo].name
+      this.recomputeConv()
+    },
+    recomputeConv() {
+      const cat = this.cats[this.convCat]
+      const fromId = cat.units[this.convFrom].id
+      const toId = cat.units[this.convTo].id
+      const extra = { rho: parseFloat(this.concRho), M: parseFloat(this.concM) }
+      try {
+        if (this.convFocus === 'to') {
+          const val = parseFloat(this.convToVal)
+          if (isNaN(val)) { this.convFromVal = ''; return }
+          this.convFromVal = calc.formatNumber(calc.convertUnit(val, toId, fromId, cat, extra))
+        } else {
+          const val = parseFloat(this.convFromVal)
+          if (isNaN(val)) { this.convToVal = ''; return }
+          this.convToVal = calc.formatNumber(calc.convertUnit(val, fromId, toId, cat, extra))
+        }
+      } catch (err) {
+        if (this.convFocus === 'to') this.convFromVal = ''
+        else this.convToVal = ''
+      }
+    },
+    numInput(key, field) {
+      let s = this[field]
+      if (key === 'C') { this[field] = ''; return }
+      if (key === 'Del') { this[field] = s.slice(0, -1); return }
+      if (key === '±') {
+        this[field] = s.startsWith('-') ? s.slice(1) : ('-' + s)
+        return
+      }
+      if (key === '.') {
+        if (s.indexOf('.') >= 0) return
+        if (s === '' || s === '-') this[field] = (s === '-') ? '-0.' : '0.'
+        else this[field] = s + '.'
+        return
+      }
+      if (s === '0') this[field] = key
+      else if (s === '-0') this[field] = '-' + key
+      else this[field] = s + key
+    },
+    convKey(key) {
+      if (this.convFocus === 'rho') { this.numInput(key, 'concRho'); this.recomputeConv(); return }
+      if (this.convFocus === 'm') { this.numInput(key, 'concM'); this.recomputeConv(); return }
+      if (this.convFocus === 'to') { this.numInput(key, 'convToVal'); this.recomputeConv(); return }
+      this.numInput(key, 'convFromVal')
+      this.recomputeConv()
+    },
+
+    // ---------- 方程求解 ----------
+    setEq(k) { this.eqActive = k },
+    eqKey(key) {
+      if (this.eqActive === 'a') this.numInput(key, 'eqA')
+      else if (this.eqActive === 'b') this.numInput(key, 'eqB')
+      else this.numInput(key, 'eqC')
+    },
+    solveEq() {
+      const a = parseFloat(this.eqA || '')
+      const b = parseFloat(this.eqB || '')
+      const c = parseFloat(this.eqC || '')
+      this.eqDelta = ''
+      this.eqRootCount = 0
+      this.eqX1 = ''
+      this.eqX2 = ''
+      this.eqMsg = ''
+      if (isNaN(a)) { this.eqMsg = '请填写系数 a'; return }
+      try {
+        const r = calc.solveQuadratic(a, isNaN(b) ? 0 : b, isNaN(c) ? 0 : c)
+        this.eqDelta = calc.formatNumber(r.delta)
+        if (r.roots.length === 0) {
+          this.eqMsg = '无实数根'
+        } else if (r.roots.length === 1) {
+          this.eqRootCount = 1
+          this.eqX1 = calc.formatNumber(r.roots[0])
+        } else {
+          this.eqRootCount = 2
+          this.eqX1 = calc.formatNumber(r.roots[0])
+          this.eqX2 = calc.formatNumber(r.roots[1])
+        }
+      } catch (err) {
+        this.eqMsg = (err && err.message) || '求解失败'
+      }
+    },
+
+    // ---------- 数字键盘统一入口 ----------
+    numKey(key) {
+      if (this.mode === 'convert') this.convKey(key)
+      else if (this.mode === 'solve') this.eqKey(key)
+    }
+  }
+</script>

@@ -1,0 +1,10 @@
+<script>
+  export default {
+    onCreate() {
+      // 应用启动
+    },
+    onDestroy() {
+      // 应用退出
+    }
+  }
+</script>
